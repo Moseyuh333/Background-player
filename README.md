@@ -1,177 +1,34 @@
 # 🎵 Background Music Player
 
-<div align="center">
+A professional Android music player application with background playback support, built using modern Android development practices and Media3 ExoPlayer.
 
-![Android](https://img.shields.io/badge/Platform-Android-green.svg)
-![API](https://img.shields.io/badge/API-26%2B-brightgreen.svg)
-![Kotlin](https://img.shields.io/badge/Language-Kotlin-purple.svg)
-![License](https://img.shields.io/badge/License-MIT-blue.svg)
-
-*A professional Android music player with foreground service support for uninterrupted playback*
-
-[Features](#-features) • [Screenshots](#-screenshots) • [Installation](#-installation) • [Architecture](#-architecture) • [Building](#-building) • [License](#-license)
-
-</div>
-
----
-
-## 📱 Overview
-
-Background Music Player is a modern Android application that provides seamless music playback with a persistent notification interface. Built with Kotlin and leveraging Android's Foreground Service, the app ensures your music continues playing even when the app is in the background or the screen is locked.
-
-### ✨ Key Highlights
-
-- 🎼 **High-Quality Audio**: Supports FLAC format for lossless audio playback
-- 🔔 **Media Controls**: Rich notification with play/pause/skip controls
-- 🔄 **Persistent Playback**: Continues playing when app is backgrounded or screen is locked
-- 🔁 **Auto-Play & Loop**: Automatically plays next track and loops playlist up to 2 times
-- 📱 **Modern UI**: Scrollable RecyclerView with Material Design 3 cards
-- 🎯 **Lightweight**: Optimized for performance and battery efficiency
-- 🌐 **Japanese & Chinese Support**: Full Unicode support for international track names
-
----
-
-## 🎯 Features
+## ✨ Features
 
 ### Core Functionality
+- **Background Playback** - Continue listening to music even when the app is minimized or the screen is off
+- **Foreground Service** - Persistent music playback with notification controls
+- **Media Controls** - Play, Pause, Stop, Previous, Next track controls
+- **Loop Mode** - Cycle through loop options: OFF → Loop 1x → Loop 2x
+- **Seek Control** - Interactive seek bar for precise playback position control
+- **Playlist Support** - Play through a queue of multiple tracks
 
-- **Scrollable Track List**
-  - RecyclerView with smooth scrolling
-  - Material Design 3 cards for each track
-  - Shows track name, artist, and album
-  - Tap any track to play instantly
-
-- **Foreground Service Playback**
-  - Music continues playing when app is minimized
-  - Survives screen rotation and configuration changes
-  - Maintains playback state across app lifecycle
-
-- **Rich Notification Interface**
-  - Always-visible playback controls
-  - Track name and artist display
-  - Progress indicator
-  - Previous, Play/Pause, Next, and Stop buttons
-
-- **Full Playback Control**
-  - Play, Pause, Stop functionality
-  - Previous/Next track navigation
-  - Seek bar for position control
-  - Real-time progress updates
-
-- **Smart Playlist Management**
-  - Automatic track progression
-  - Single-track loop (repeat current track 1x or 2x)
-  - Toggle loop mode with one button
-  - Seamless transition between tracks
-  - Loop counter resets on manual track selection
-
-- **Media Format Support**
-  - FLAC (Free Lossless Audio Codec)
-  - High-quality audio playback via ExoPlayer (Media3)
-  - Efficient buffering and streaming
-
-### Auto-Play & Loop Behavior
-
-The app includes intelligent single-track loop management:
-
-1. **Automatic Track Progression**
-   - When a track finishes, the next track automatically starts
-   - No manual intervention needed for continuous playback
-
-2. **Single-Track Loop System**
-   - **🔁 OFF**: Normal playback, auto-advance to next track
-   - **🔁 1x**: Current track repeats 1 time before moving to next
-   - **🔁 2x**: Current track repeats 2 times before moving to next
-   - Tap loop button to cycle: OFF → 1x → 2x → OFF
-
-3. **Loop Button Behavior**
-   - Press once: Enable loop 1x (track plays 2 times total)
-   - Press twice: Enable loop 2x (track plays 3 times total)
-   - Press third time: Disable loop (back to normal)
-   - Visual indicators: Different border colors for each mode
-
-4. **Smart Reset Logic**
-   - Loop counter resets when manually selecting a new track
-   - Loop counter resets when using Previous/Next buttons
-   - Loop mode stays active across track changes
-
-5. **Seamless Experience**
-   - No gaps between track loops
-   - Smooth transitions
-   - State preserved across app lifecycle
-
-**Example Flow with Loop 2x:**
-```
-Track 1 (play 1) → Track 1 (loop 1) → Track 1 (loop 2) → Track 2 →  ...
-```
+### User Experience
+- **Material Design UI** - Clean, modern interface with Material Components
+- **Notification Controls** - Control playback directly from the notification shade
+- **Real-time Updates** - Live playback position and duration updates
+- **Track Information** - Display track name, artist, and playback status
+- **Permission Handling** - Smart runtime permission requests for audio access
 
 ### Technical Features
-
-- **Modern Android Architecture**
-  - MVVM pattern with ViewModel
-  - Kotlin Coroutines for async operations
-  - StateFlow for reactive state management
-  - ViewBinding for type-safe view access
-
-- **Android Jetpack Components**
-  - Lifecycle-aware components
-  - ViewModel for configuration survival
-  - Material Design 3 components
-
-- **Robust Service Management**
-  - Bound and Started service pattern
-  - Proper lifecycle handling
-  - Battery optimization compatible
-  - Audio focus management
-
----
-
-## 📸 Screenshots
-
-| Main Screen | Now Playing | Notification |
-|------------|-------------|--------------|
-| *Track selection interface with scrollable playlist* | *Active playback with progress indicator* | *Persistent notification with media controls* |
-
----
-
-## 🚀 Installation
-
-### Prerequisites
-
-- Android device or emulator running **Android 8.0 (API 26)** or higher
-- For building: Android Studio Hedgehog or newer
-- Gradle 8.2+
-- JDK 11 or higher
-
-### Quick Install
-
-1. **Download APK**
-   ```bash
-   # Clone the repository
-   git clone https://github.com/yourusername/background-music-player.git
-   cd background-music-player
-   ```
-
-2. **Build & Install**
-   ```bash
-   # Windows
-   gradlew.bat assembleDebug installDebug
-   
-   # macOS/Linux
-   ./gradlew assembleDebug installDebug
-   ```
-
-3. **Grant Permissions**
-   - Allow notification permissions (Android 13+)
-   - Allow audio file access
-   - Disable battery optimization for best performance
-
----
+- **Media3 ExoPlayer** - Industry-standard media playback engine
+- **MVVM Architecture** - Separation of concerns with ViewModel pattern
+- **Kotlin Coroutines** - Asynchronous programming with StateFlow
+- **Service Binding** - Efficient communication between Activity and Service
+- **FLAC Support** - High-quality lossless audio playback
 
 ## 🏗️ Architecture
 
 ### Project Structure
-
 ```
 app/
 ├── src/main/
@@ -179,394 +36,216 @@ app/
 │   │   ├── MainActivity.kt              # Main UI controller
 │   │   ├── MainViewModel.kt             # UI state management
 │   │   ├── model/
-│   │   │   └── PlaybackState.kt         # State definitions
+│   │   │   └── PlaybackState.kt         # Playback state definitions
 │   │   └── service/
-│   │       ├── MusicPlayerService.kt    # Background service
-│   │       └── MusicNotificationManager.kt  # Notification handler
+│   │       ├── MusicPlayerService.kt    # Background playback service
+│   │       └── MusicNotificationManager.kt  # Notification controls
 │   ├── res/
-│   │   ├── layout/
-│   │   │   └── activity_main.xml        # Main UI layout
+│   │   ├── layout/                      # UI layouts
 │   │   ├── raw/                         # Audio files (FLAC)
-│   │   └── values/                      # Strings, themes, colors
-│   └── AndroidManifest.xml              # App configuration
+│   │   └── values/                      # Resources
+│   └── AndroidManifest.xml
+└── build.gradle.kts
 ```
 
-### Design Pattern: MVVM
+### Components
 
-```
-┌─────────────┐         ┌──────────────┐         ┌─────────────┐
-│  MainActivity│ ◄─────► │ MainViewModel│         │   Service   │
-│   (View)    │         │  (ViewModel) │         │             │
-└─────────────┘         └──────────────┘         └─────────────┘
-       │                       │                         │
-       │                       │                         │
-       ▼                       ▼                         ▼
-┌─────────────┐         ┌──────────────┐         ┌─────────────┐
-│ ViewBinding │         │  StateFlow   │         │  ExoPlayer  │
-└─────────────┘         └──────────────┘         └─────────────┘
-```
+#### MainActivity
+- Handles UI interactions and displays track list
+- Binds to `MusicPlayerService` for playback control
+- Manages runtime permissions (READ_MEDIA_AUDIO, POST_NOTIFICATIONS)
+- Observes playback state and updates UI accordingly
+- Lifecycle-aware: properly binds/unbinds service
 
-### Key Components
+#### MainViewModel
+- Manages track list and selected track state
+- Provides UI state using Kotlin StateFlow
+- Survives configuration changes (screen rotation)
 
-#### 1. **MainActivity**
-- Handles UI interactions
-- Binds to MusicPlayerService
-- Observes playback state via StateFlow
-- Manages permissions
-
-#### 2. **MainViewModel**
-- Maintains track list
-- Preserves UI state across configuration changes
-- Provides StateFlow for reactive updates
-
-#### 3. **MusicPlayerService**
+#### MusicPlayerService
 - Foreground service for background playback
-- Manages ExoPlayer instance
-- Handles notification updates
-- Exposes playback state via StateFlow
+- Implements ExoPlayer for media playback
+- Manages playlist and track navigation
+- Handles playback events and state updates
+- Supports loop modes (1x, 2x)
 
-#### 4. **MusicNotificationManager**
-- Creates and updates media-style notifications
-- Handles notification action clicks
-- Manages notification channel
+#### MusicNotificationManager
+- Creates and manages media-style notifications
+- Provides notification controls (play, pause, next, previous)
+- Updates notification with current track information
 
----
+#### PlaybackState
+Sealed class hierarchy representing different playback states:
+- `Playing` - Active playback with position/duration
+- `Paused` - Playback paused at position
+- `Stopped` - No active playback
+- `Preparing` - Loading/buffering track
 
-## 🛠️ Building
+## 🛠️ Technical Stack
 
-### Development Setup
+### Dependencies
+- **AndroidX Core** - Modern Android development libraries
+- **Material Components** - Material Design UI components
+- **Media3 ExoPlayer 1.2.1** - Advanced media playback
+  - media3-exoplayer
+  - media3-ui
+  - media3-session
+  - media3-common
+  - media3-decoder
+  - media3-extractor
+- **Kotlin Coroutines** - Asynchronous programming
+- **ViewBinding** - Type-safe view access
 
-1. **Clone Repository**
+### Requirements
+- **Minimum SDK**: API 24 (Android 7.0)
+- **Target SDK**: API 34 (Android 14)
+- **Compile SDK**: API 34
+- **Kotlin**: 1.9.0
+- **Gradle**: 8.1.1
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Android Studio Hedgehog (2023.1.1) or later
+- JDK 17 or later
+- Android SDK with API 34
+
+### Installation
+
+1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/background-music-player.git
-   cd background-music-player
+   git clone <repository-url>
+   cd Background-player
    ```
 
 2. **Open in Android Studio**
-   - File → Open → Select project folder
+   - Launch Android Studio
+   - Select "Open an Existing Project"
+   - Navigate to the project directory
+
+3. **Sync Gradle**
    - Wait for Gradle sync to complete
+   - Ensure all dependencies are downloaded
 
-3. **Add Music Files**
-   - Place FLAC files in `app/src/main/res/raw/`
-   - File names must be lowercase with underscores only
-   - Update `MainViewModel.kt` with track information
+4. **Build and Run**
+   - Connect an Android device or start an emulator
+   - Click "Run" (Shift+F10) to build and install
 
-4. **Build Variants**
-   ```bash
-   # Debug build
-   ./gradlew assembleDebug
-   
-   # Release build (requires signing config)
-   ./gradlew assembleRelease
-   ```
+### Build Scripts
 
-### Build Configuration
+The project includes convenient build scripts for Windows:
 
-**Minimum Requirements:**
-- `minSdk`: 26 (Android 8.0)
-- `targetSdk`: 34 (Android 14)
-- `compileSdk`: 34
+- **`build_project.bat`** - Build the APK
+- **`build_and_install.bat`** - Build and install to connected device
+- **`reinstall.bat`** - Reinstall the app
 
-**Key Dependencies:**
-```gradle
-// Media3 (ExoPlayer)
-androidx.media3:media3-exoplayer:1.2.1
-androidx.media3:media3-ui:1.2.1
-androidx.media3:media3-session:1.2.1
+## 📱 Permissions
 
-// Kotlin Coroutines
-kotlinx-coroutines-android:1.7.3
+The app requests the following permissions:
 
-// AndroidX Lifecycle
-lifecycle-viewmodel-ktx:2.7.0
-lifecycle-runtime-ktx:2.7.0
-```
+### Android 13+ (API 33+)
+- `READ_MEDIA_AUDIO` - Access audio files
+- `POST_NOTIFICATIONS` - Show playback notifications
+- `FOREGROUND_SERVICE` - Background playback
+- `FOREGROUND_SERVICE_MEDIA_PLAYBACK` - Media playback service
 
----
+### Android 6.0 - 12 (API 23-32)
+- `READ_EXTERNAL_STORAGE` - Access audio files
+- `FOREGROUND_SERVICE` - Background playback
 
-## 🎼 Adding Your Own Music
+## 🎮 Usage
 
-### Step 1: Prepare Audio Files
+### Playing Music
+1. Launch the app
+2. Grant required permissions when prompted
+3. Tap on any track from the list to start playback
+4. The music will continue playing in the background
 
-Convert your audio to FLAC format (optional but recommended for quality):
-```bash
-ffmpeg -i input.mp3 -c:a flac output.flac
-```
+### Playback Controls
+- **Play/Pause** - Control playback state
+- **Previous/Next** - Navigate through playlist
+- **Stop** - Stop playback and clear notification
+- **Loop** - Cycle through loop modes (OFF/1x/2x)
+- **Seek Bar** - Drag to change playback position
 
-### Step 2: Add to Resources
-
-1. Copy FLAC files to `app/src/main/res/raw/`
-2. Rename files using only lowercase letters, numbers, and underscores:
-   - ✅ `my_favorite_song.flac`
-   - ❌ `My Favorite Song.flac`
-   - ❌ `song-name.flac`
-
-### Step 3: Update Track List
-
-Edit `MainViewModel.kt`:
-
-```kotlin
-_tracks.value = listOf(
-    Track(
-        id = 1,
-        name = "Your Song Title",  // Display name (can use any characters)
-        artist = "Artist Name",
-        album = "Album Name",
-        uri = "android.resource://com.example.backgroundmusicplayer/${R.raw.your_file_name}"
-    ),
-    // Add more tracks...
-)
-```
-
-### Step 4: Rebuild & Install
-
-```bash
-./gradlew clean assembleDebug installDebug
-```
-
----
+### Notification Controls
+When music is playing, a persistent notification appears with:
+- Current track information
+- Play/Pause button
+- Previous/Next track buttons
+- Tap to return to the app
 
 ## 🔧 Configuration
 
-### Permissions
+### Adding Custom Tracks
+Place your audio files (FLAC format) in `app/src/main/res/raw/` directory. The app automatically discovers and lists all audio files.
 
-The app requires the following permissions:
+### Supported Audio Formats
+- FLAC (Free Lossless Audio Codec) - Primary support
+- MP3, M4A, WAV - Supported through ExoPlayer
 
-```xml
-<!-- Audio file access (Android 6-12) -->
-<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+## 📝 Code Highlights
 
-<!-- Audio file access (Android 13+) -->
-<uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+### Service Lifecycle
+The app properly manages service lifecycle:
+- Service starts when user plays a track
+- Service becomes foreground with notification
+- Service continues playing when app is backgrounded
+- Service stops when user clicks Stop or clears notification
 
-<!-- Notification display (Android 13+) -->
-<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
-<!-- Foreground service -->
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-
-<!-- Prevent device sleep during playback -->
-<uses-permission android:name="android.permission.WAKE_LOCK" />
-```
-
-### Customization
-
-**Colors** - Edit `res/values/colors.xml`:
-```xml
-<color name="primary">#6200EE</color>
-<color name="primary_variant">#3700B3</color>
-```
-
-**App Name** - Edit `res/values/strings.xml`:
-```xml
-<string name="app_name">Your App Name</string>
-```
-
-**Notification Channel** - Edit `MusicNotificationManager.kt`:
+### State Management
+Uses modern Kotlin Flow for reactive state updates:
 ```kotlin
-const val CHANNEL_NAME = "Your Channel Name"
+// Service emits playback state
+val playbackState = MutableStateFlow<PlaybackState>(PlaybackState.Stopped)
+
+// Activity observes and updates UI
+musicService?.playbackState?.collect { state ->
+    updateUI(state)
+}
 ```
 
----
+### Permission Handling
+Smart permission requests based on Android version:
+- Android 13+: Requests `READ_MEDIA_AUDIO` and `POST_NOTIFICATIONS`
+- Android 6-12: Requests `READ_EXTERNAL_STORAGE`
 
 ## 🐛 Troubleshooting
 
-### No Sound During Playback
+### Music doesn't play
+- Ensure audio files are in `res/raw/` directory
+- Check that permissions are granted
+- Verify audio file format is supported
 
-1. **Check device volume**: Use hardware volume buttons to increase media volume
-2. **Grant permissions**: Ensure notification and audio permissions are granted
-3. **Disable battery optimization**: Settings → Battery → Unrestricted
-4. **Check logs**: Run `adb logcat | grep MusicPlayerService` to see errors
+### Notification doesn't show
+- Grant `POST_NOTIFICATIONS` permission (Android 13+)
+- Check that service is running in foreground
 
-### App Crashes on Launch
-
-1. **Clean build**: `./gradlew clean`
-2. **Rebuild**: `./gradlew assembleDebug`
-3. **Check API level**: Device must be Android 8.0 (API 26) or higher
-
-### Music Stops When Screen Locks
-
-1. **Check battery settings**: Disable battery optimization for the app
-2. **Check Do Not Disturb**: Ensure app is allowed during DND mode
-
-### Notification Not Showing
-
-1. **Grant permission**: Android 13+ requires POST_NOTIFICATIONS permission
-2. **Check notification settings**: Settings → Apps → Background Music Player → Notifications
-
----
-
-## 🧪 Testing
-
-### Manual Testing Checklist
-
-- [ ] App launches without crash
-- [ ] Permissions are requested on first launch
-- [ ] Track list displays all 6 songs
-- [ ] Selecting a track starts playback
-- [ ] Notification appears with controls
-- [ ] Play/Pause buttons work
-- [ ] Previous/Next buttons navigate tracks
-- [ ] Seek bar updates during playback
-- [ ] Music continues when app is minimized
-- [ ] Music continues when screen is locked
-- [ ] Stop button terminates playback and service
-- [ ] Track automatically advances to next song when finished
-- [ ] Loop button cycles through OFF → 1x → 2x → OFF
-- [ ] Loop 1x: Current track plays 2 times total before next
-- [ ] Loop 2x: Current track plays 3 times total before next
-- [ ] Manual track selection resets loop counter
-- [ ] Loop mode persists across different tracks
-
-### Logcat Monitoring
-
-```bash
-# View all service logs
-adb logcat -s MusicPlayerService
-
-# View with errors
-adb logcat *:E
-
-# Clear logs and monitor
-adb logcat -c && adb logcat -s MusicPlayerService
-```
-
----
-
-## 📊 Technical Specifications
-
-| Component | Technology |
-|-----------|------------|
-| **Language** | Kotlin 1.9.20 |
-| **UI Framework** | Android View System with ViewBinding + RecyclerView |
-| **Architecture** | MVVM (Model-View-ViewModel) |
-| **Audio Engine** | ExoPlayer (Media3) 1.2.1 |
-| **Concurrency** | Kotlin Coroutines & Flow |
-| **Dependency Injection** | Manual (no DI framework) |
-| **Min SDK** | 26 (Android 8.0 Oreo) |
-| **Target SDK** | 34 (Android 14) |
-| **Build System** | Gradle 8.2 with Kotlin DSL |
-
----
-
-## 📈 Performance
-
-- **APK Size**: ~300 MB (includes 6 FLAC audio files)
-- **RAM Usage**: ~50-80 MB during playback
-- **Battery Impact**: Minimal (uses optimized foreground service)
-- **Audio Latency**: <100ms playback start time
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please follow these guidelines:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Code Style
-
-- Follow [Kotlin coding conventions](https://kotlinlang.org/docs/coding-conventions.html)
-- Use meaningful variable and function names
-- Add KDoc comments for public APIs
-- Keep functions small and focused
-
----
+### App crashes on startup
+- Check logcat for error messages
+- Verify all dependencies are properly installed
+- Ensure target device meets minimum SDK requirements
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-```
-MIT License
+## 🤝 Contributing
 
-Copyright (c) 2025 Background Music Player
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+### Development Guidelines
+- Follow Kotlin coding conventions
+- Use Material Design principles
+- Add comments for complex logic
+- Test on multiple Android versions
+- Handle edge cases gracefully
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+## 📧 Contact
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+For questions or support, please open an issue in the repository.
 
 ---
 
-## 👨‍💻 Authors
-
-- **Your Name** - *Initial work* - [YourGitHub](https://github.com/yourusername)
-
----
-
-## 🙏 Acknowledgments
-
-- [ExoPlayer](https://exoplayer.dev/) - Powerful media player for Android
-- [Material Design](https://m3.material.io/) - UI design guidelines
-- [Kotlin](https://kotlinlang.org/) - Modern programming language for Android
-- Android Open Source Project - Platform and tools
-
----
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/yourusername/background-music-player/issues)
-- **Email**: your.email@example.com
-- **Documentation**: [Wiki](https://github.com/yourusername/background-music-player/wiki)
-
----
-
-## 🗺️ Roadmap
-
-### Version 2.0 (Planned)
-
-- [x] **Auto-play next track** ✅ (Completed)
-- [x] **Single-track loop (1x/2x)** ✅ (Completed)
-- [x] **Toggle loop button with visual feedback** ✅ (Completed)
-- [ ] Playlist management with save/load
-- [ ] Shuffle mode
-- [ ] Custom repeat modes (single track, infinite loop)
-- [ ] Equalizer with presets
-- [ ] Sleep timer
-- [ ] Widget support
-- [ ] Android Auto integration
-- [ ] Folder browsing
-- [ ] Album art display
-- [ ] Queue management
-- [ ] Favorite tracks
-
-### Version 3.0 (Future)
-
-- [ ] Online streaming support
-- [ ] Lyrics display
-- [ ] Cloud sync
-- [ ] Chromecast support
-- [ ] Podcast support
-
----
-
-<div align="center">
-
-**⭐ Star this repository if you find it helpful! ⭐**
-
-Made with ❤️ using Kotlin and Android
-
-[Back to Top](#-background-music-player)
-
-</div>
+**Built with ❤️ using Kotlin and Android Jetpack**
 
