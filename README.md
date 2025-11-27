@@ -1,5 +1,7 @@
 # 🎵 Background Music Player
-
+/**Made by Khôi Nguyễn**/
+/**https://github.com/Moseyuh333**/
+/**https://github.com/Moseyuh333/Background-player**/ 
 A professional Android music player application with background playback support, built using modern Android development practices and Media3 ExoPlayer.
 
 ## ✨ Features
