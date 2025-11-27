@@ -47,6 +47,7 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
 
     // Lifecycle components
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
@@ -57,6 +58,9 @@ dependencies {
     // Activity KTX for viewModels()
     implementation("androidx.activity:activity-ktx:1.8.2")
 
+    // Media support for notifications
+    implementation("androidx.media:media:1.7.0")
+
     // ExoPlayer (Media3) - Modern replacement for ExoPlayer 2.x
     implementation("androidx.media3:media3-exoplayer:1.2.1")
     implementation("androidx.media3:media3-ui:1.2.1")
@@ -65,7 +69,7 @@ dependencies {
 
     // For handling different audio formats including FLAC
     implementation("androidx.media3:media3-decoder:1.2.1")
-    implementation("androidx.media3:media3-exoplayer-flac:1.2.1")
+    implementation("androidx.media3:media3-extractor:1.2.1")
 
     // Coroutines for async operations
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
@@ -74,10 +78,5 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-}
-// Top-level build file
-plugins {
-    id("com.android.application") version "8.1.1" apply false
-    id("org.jetbrains.kotlin.android") version "1.9.0" apply false
 }
 

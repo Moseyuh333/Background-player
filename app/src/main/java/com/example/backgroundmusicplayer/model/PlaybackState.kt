@@ -15,11 +15,13 @@ sealed class PlaybackState {
      * @param trackName Name of the currently playing track
      * @param position Current playback position in milliseconds
      * @param duration Total track duration in milliseconds
+     * @param trackIndex Current track index in playlist
      */
     data class Playing(
         val trackName: String,
         val position: Long = 0L,
-        val duration: Long = 0L
+        val duration: Long = 0L,
+        val trackIndex: Int = 0
     ) : PlaybackState()
 
     /**
@@ -27,11 +29,13 @@ sealed class PlaybackState {
      * @param trackName Name of the paused track
      * @param position Current playback position in milliseconds
      * @param duration Total track duration in milliseconds
+     * @param trackIndex Current track index in playlist
      */
     data class Paused(
         val trackName: String,
         val position: Long = 0L,
-        val duration: Long = 0L
+        val duration: Long = 0L,
+        val trackIndex: Int = 0
     ) : PlaybackState()
 
     /**

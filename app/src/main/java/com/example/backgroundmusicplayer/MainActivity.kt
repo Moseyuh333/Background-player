@@ -140,65 +140,109 @@ class MainActivity : AppCompatActivity() {
      * Check and request necessary permissions based on Android version.
      */
     private fun checkAndRequestPermissions() {
-        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val permissions = mutableListOf<String>()
+
+        // Add media permission based on Android version
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             // Android 13+ (API 33+): Use granular media permissions
-            Manifest.permission.READ_MEDIA_AUDIO
+            permissions.add(Manifest.permission.READ_MEDIA_AUDIO)
+            // Also need POST_NOTIFICATIONS for Android 13+
+            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
         } else {
             // Android 6.0 to 12 (API 23-32): Use READ_EXTERNAL_STORAGE
-            Manifest.permission.READ_EXTERNAL_STORAGE
+            permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
 
-        when {
-            ContextCompat.checkSelfPermission(this, permission) ==
-                PackageManager.PERMISSION_GRANTED -> {
-                Log.d(TAG, "Permission already granted")
-            }
-            shouldShowRequestPermissionRationale(permission) -> {
-                // Show explanation to user
-                Toast.makeText(
-                    this,
-                    "Permission needed to access audio files",
-                    Toast.LENGTH_LONG
-                ).show()
-                permissionLauncher.launch(permission)
-            }
-            else -> {
-                // Request permission
-                permissionLauncher.launch(permission)
-            }
+        // Check which permissions are not granted
+        val permissionsToRequest = permissions.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (permissionsToRequest.isEmpty()) {
+            Log.d(TAG, "All permissions already granted")
+        } else {
+            // Request the first missing permission
+            // In a production app, you might want to request all at once
+            permissionLauncher.launch(permissionsToRequest.first())
         }
     }
 
     /**
-     * Setup click listeners for track selection buttons.
+     * Setup scrollable track list with LinearLayout.
      */
     private fun setupTrackButtons() {
+        // Observe tracks from ViewModel and dynamically add views
         lifecycleScope.launch {
-            viewModel.tracks.collect { tracks ->
-                if (tracks.isNotEmpty()) {
-                    // Setup track buttons
-                    binding.btnTrack1.text = tracks.getOrNull(0)?.name ?: "Track 1"
-                    binding.btnTrack2.text = tracks.getOrNull(1)?.name ?: "Track 2"
-                    binding.btnTrack3.text = tracks.getOrNull(2)?.name ?: "Track 3"
+            try {
+                viewModel.tracks.collect { tracks ->
+                    Log.d(TAG, "Tracks collected: ${tracks.size} tracks")
 
-                    binding.btnTrack1.setOnClickListener {
-                        tracks.getOrNull(0)?.let { playTrack(it) }
+                    // Clear existing views on main thread
+                    runOnUiThread {
+                        try {
+                            binding.linearLayoutTracks.removeAllViews()
+
+                            tracks.forEachIndexed { index, track ->
+                                try {
+                                    // Create a simple card for each track
+                                    val cardView = com.google.android.material.card.MaterialCardView(this@MainActivity).apply {
+                                        layoutParams = android.widget.LinearLayout.LayoutParams(
+                                            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                                            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                                        ).apply {
+                                            setMargins(16, 8, 16, 8)
+                                        }
+                                        radius = 12f
+                                        cardElevation = 4f
+                                        setContentPadding(32, 24, 32, 24)
+                                        isClickable = true
+                                        isFocusable = true
+                                    }
+
+                                    // Create text view for track info
+                                    val textView = android.widget.TextView(this@MainActivity).apply {
+                                        text = "${index + 1}. ${track.name}\n${track.artist}"
+                                        textSize = 16f
+                                        setTextColor(getColor(android.R.color.black))
+                                    }
+
+                                    cardView.addView(textView)
+
+                                    // Set click listener
+                                    cardView.setOnClickListener {
+                                        Log.d(TAG, "Track clicked: ${track.name}")
+                                        playTrack(track)
+                                    }
+
+                                    // Add to container
+                                    binding.linearLayoutTracks.addView(cardView)
+
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "Error creating view for track: ${track.name}", e)
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error updating track list UI", e)
+                        }
                     }
-                    binding.btnTrack2.setOnClickListener {
-                        tracks.getOrNull(1)?.let { playTrack(it) }
-                    }
-                    binding.btnTrack3.setOnClickListener {
-                        tracks.getOrNull(2)?.let { playTrack(it) }
-                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error setting up track list", e)
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, "Error loading tracks: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
         }
     }
 
     /**
-     * Setup playback control buttons (Play/Pause/Stop).
+     * Setup playback control buttons (Play/Pause/Stop/Previous/Next/Loop).
      */
     private fun setupControlButtons() {
+        binding.btnPrevious.setOnClickListener {
+            musicService?.previous()
+        }
+
         binding.btnPlay.setOnClickListener {
             musicService?.play()
         }
@@ -207,8 +251,48 @@ class MainActivity : AppCompatActivity() {
             musicService?.pause()
         }
 
+        binding.btnNext.setOnClickListener {
+            musicService?.next()
+        }
+
         binding.btnStop.setOnClickListener {
             musicService?.stop()
+        }
+
+        binding.btnLoop.setOnClickListener {
+            musicService?.let { service ->
+                // Cycle loop mode: 0 -> 1 -> 2 -> 0
+                val newLoopMode = service.cycleLoopMode()
+                updateLoopButton(newLoopMode)
+
+                // Show feedback to user
+                val message = when (newLoopMode) {
+                    1 -> "🔁 Loop current track: 1 time"
+                    2 -> "🔁 Loop current track: 2 times"
+                    else -> "🔁 Loop: OFF"
+                }
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    /**
+     * Update loop button appearance based on loop mode.
+     */
+    private fun updateLoopButton(loopMode: Int) {
+        when (loopMode) {
+            1 -> {
+                binding.btnLoop.text = "🔁 1x"
+                binding.btnLoop.strokeColor = getColorStateList(android.R.color.holo_blue_light)
+            }
+            2 -> {
+                binding.btnLoop.text = "🔁 2x"
+                binding.btnLoop.strokeColor = getColorStateList(android.R.color.holo_green_light)
+            }
+            else -> {
+                binding.btnLoop.text = "🔁 OFF"
+                binding.btnLoop.strokeColor = getColorStateList(android.R.color.darker_gray)
+            }
         }
     }
 
@@ -232,26 +316,65 @@ class MainActivity : AppCompatActivity() {
      * Play a selected track by starting the service.
      */
     private fun playTrack(track: Track) {
-        Log.d(TAG, "Playing track: ${track.name}")
-        viewModel.selectTrack(track)
+        try {
+            Log.d(TAG, "Playing track: ${track.name}")
+            Toast.makeText(this, "Playing: ${track.name}", Toast.LENGTH_SHORT).show()
 
-        // Start service with track information
-        val intent = Intent(this, MusicPlayerService::class.java).apply {
-            putExtra(MusicPlayerService.EXTRA_TRACK_URI, track.uri)
-            putExtra(MusicPlayerService.EXTRA_TRACK_NAME, track.name)
-            putExtra(MusicPlayerService.EXTRA_ARTIST, track.artist)
-        }
+            viewModel.selectTrack(track)
 
-        // Start service (will become foreground service)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intent)
-        } else {
-            startService(intent)
-        }
+            // Get all tracks and create playlist
+            val allTracks = viewModel.tracks.value
+            val trackIndex = allTracks.indexOf(track)
 
-        // Bind to service if not already bound
-        if (!isServiceBound) {
-            bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+            // Convert tracks to service TrackInfo format
+            val playlist = allTracks.map { t ->
+                MusicPlayerService.TrackInfo(
+                    uri = t.uri,
+                    name = t.name,
+                    artist = t.artist
+                )
+            }
+
+            // Start service with track information
+            val intent = Intent(this, MusicPlayerService::class.java).apply {
+                putExtra(MusicPlayerService.EXTRA_TRACK_URI, track.uri)
+                putExtra(MusicPlayerService.EXTRA_TRACK_NAME, track.name)
+                putExtra(MusicPlayerService.EXTRA_ARTIST, track.artist)
+            }
+
+            // Start service (will become foreground service)
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(intent)
+                } else {
+                    startService(intent)
+                }
+                Log.d(TAG, "Service started successfully")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error starting service", e)
+                Toast.makeText(this, "Error starting playback service", Toast.LENGTH_LONG).show()
+                return
+            }
+
+            // Set playlist in service after binding
+            lifecycleScope.launch {
+                delay(500) // Wait for service to be bound
+                musicService?.setPlaylist(playlist, trackIndex)
+                Log.d(TAG, "Playlist set with ${playlist.size} tracks, starting at index $trackIndex")
+            }
+
+            // Bind to service if not already bound
+            if (!isServiceBound) {
+                try {
+                    bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+                    Log.d(TAG, "Binding to service")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error binding to service", e)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in playTrack", e)
+            Toast.makeText(this, "Error playing track: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -284,36 +407,49 @@ class MainActivity : AppCompatActivity() {
     private fun updateUI(state: PlaybackState) {
         when (state) {
             is PlaybackState.Playing -> {
-                binding.tvStatus.text = "Playing"
+                binding.tvStatus.text = "▶ Now Playing"
                 binding.tvCurrentTrack.text = state.trackName
                 binding.btnPlay.isEnabled = false
                 binding.btnPause.isEnabled = true
                 binding.btnStop.isEnabled = true
+                binding.btnPrevious.isEnabled = true
+                binding.btnNext.isEnabled = true
+                binding.btnLoop.isEnabled = true
                 updateSeekBar(state.position, state.duration)
             }
             is PlaybackState.Paused -> {
-                binding.tvStatus.text = "Paused"
+                binding.tvStatus.text = "⏸ Paused"
                 binding.tvCurrentTrack.text = state.trackName
                 binding.btnPlay.isEnabled = true
                 binding.btnPause.isEnabled = false
                 binding.btnStop.isEnabled = true
+                binding.btnPrevious.isEnabled = true
+                binding.btnNext.isEnabled = true
+                binding.btnLoop.isEnabled = true
                 updateSeekBar(state.position, state.duration)
             }
             is PlaybackState.Stopped -> {
-                binding.tvStatus.text = "Stopped"
+                binding.tvStatus.text = "■ Stopped"
+                binding.tvCurrentTrack.text = "No track selected"
                 binding.btnPlay.isEnabled = false
                 binding.btnPause.isEnabled = false
                 binding.btnStop.isEnabled = false
+                binding.btnPrevious.isEnabled = false
+                binding.btnNext.isEnabled = false
+                binding.btnLoop.isEnabled = false
                 binding.seekBar.progress = 0
                 binding.tvPosition.text = "00:00"
                 binding.tvDuration.text = "00:00"
             }
             is PlaybackState.Preparing -> {
-                binding.tvStatus.text = "Loading..."
+                binding.tvStatus.text = "⏳ Loading..."
                 binding.tvCurrentTrack.text = state.trackName
                 binding.btnPlay.isEnabled = false
                 binding.btnPause.isEnabled = false
                 binding.btnStop.isEnabled = true
+                binding.btnPrevious.isEnabled = true
+                binding.btnNext.isEnabled = true
+                binding.btnLoop.isEnabled = true
             }
         }
     }

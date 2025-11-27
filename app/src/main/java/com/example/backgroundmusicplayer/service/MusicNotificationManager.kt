@@ -66,12 +66,16 @@ class MusicNotificationManager(private val context: Context) {
      * @param trackName Name of the currently playing track
      * @param artist Artist name
      * @param isPlaying Whether the track is currently playing
+     * @param position Current playback position in milliseconds
+     * @param duration Total track duration in milliseconds
      * @return Notification object ready to be displayed
      */
     fun buildNotification(
         trackName: String,
         artist: String = "Unknown Artist",
-        isPlaying: Boolean
+        isPlaying: Boolean,
+        position: Long = 0L,
+        duration: Long = 0L
     ): Notification {
         // Intent to open the app when notification is clicked
         val contentIntent = Intent(context, MainActivity::class.java).apply {
@@ -84,6 +88,17 @@ class MusicNotificationManager(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        // Previous action
+        val previousIntent = Intent(context, MusicPlayerService::class.java).apply {
+            action = ACTION_PREVIOUS
+        }
+        val previousPendingIntent = PendingIntent.getService(
+            context,
+            2,
+            previousIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         // Play/Pause action
         val playPauseIntent = Intent(context, MusicPlayerService::class.java).apply {
             action = ACTION_PLAY_PAUSE
@@ -92,6 +107,17 @@ class MusicNotificationManager(private val context: Context) {
             context,
             0,
             playPauseIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Next action
+        val nextIntent = Intent(context, MusicPlayerService::class.java).apply {
+            action = ACTION_NEXT
+        }
+        val nextPendingIntent = PendingIntent.getService(
+            context,
+            3,
+            nextIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -114,22 +140,36 @@ class MusicNotificationManager(private val context: Context) {
         }
         val playPauseText = if (isPlaying) "Pause" else "Play"
 
+        // Format time for subtext
+        val positionText = formatTime(position)
+        val durationText = formatTime(duration)
+        val timeText = if (duration > 0) "$positionText / $durationText" else artist
+
         // Build the notification
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setContentTitle(trackName)
-            .setContentText(artist)
+            .setContentText(timeText)
+            .setSubText(artist)
             .setSmallIcon(android.R.drawable.ic_media_play) // Use system icon
             .setContentIntent(contentPendingIntent)
-            .setOngoing(true) // Cannot be dismissed by user while playing
+            .setOngoing(isPlaying) // Only ongoing when playing
             .setOnlyAlertOnce(true) // Only alert once when notification is first shown
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            // Add progress bar
+            .setProgress(
+                if (duration > 0) duration.toInt() else 100,
+                if (duration > 0) position.toInt() else 0,
+                duration == 0L // Indeterminate if no duration
+            )
             // Add media style for better media controls
             .setStyle(
                 androidx.media.app.NotificationCompat.MediaStyle()
-                    .setShowActionsInCompactView(0, 1) // Show play/pause and stop in compact view
+                    .setShowActionsInCompactView(0, 1, 2) // Show previous, play/pause, next in compact view
             )
             // Add action buttons
+            .addAction(android.R.drawable.ic_media_previous, "Previous", previousPendingIntent)
             .addAction(playPauseIcon, playPauseText, playPausePendingIntent)
+            .addAction(android.R.drawable.ic_media_next, "Next", nextPendingIntent)
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopPendingIntent)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
@@ -137,10 +177,29 @@ class MusicNotificationManager(private val context: Context) {
     }
 
     /**
+     * Formats milliseconds to MM:SS format.
+     */
+    private fun formatTime(millis: Long): String {
+        val totalSeconds = millis / 1000
+        val minutes = totalSeconds / 60
+        val seconds = totalSeconds % 60
+        return String.format("%02d:%02d", minutes, seconds)
+    }
+
+    /**
      * Updates an existing notification.
      */
     fun updateNotification(notification: Notification) {
-        notificationManager.notify(NOTIFICATION_ID, notification)
+        // Check permission for Android 13+ (API 33+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                notificationManager.notify(NOTIFICATION_ID, notification)
+            }
+        } else {
+            // No permission check needed for Android 12 and below
+            notificationManager.notify(NOTIFICATION_ID, notification)
+        }
     }
 
     /**

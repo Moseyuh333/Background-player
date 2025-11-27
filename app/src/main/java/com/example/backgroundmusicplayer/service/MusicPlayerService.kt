@@ -14,6 +14,12 @@ import com.example.backgroundmusicplayer.model.PlaybackState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.cancel
 
 /**
  * Foreground Service for managing music playback.
@@ -54,12 +60,31 @@ class MusicPlayerService : Service() {
     private var currentTrackName: String = "No Track"
     private var currentArtist: String = "Unknown Artist"
 
+    // Playlist management
+    private val playlist = mutableListOf<TrackInfo>()
+    private var currentTrackIndex = 0
+
+    // Loop management - Loop single track (0=off, 1=loop once, 2=loop twice)
+    private var loopMode = 0 // 0=off, 1=loop 1x, 2=loop 2x
+    private var currentTrackLoopCount = 0 // How many times current track has looped
+
     // Playback state exposed via StateFlow for reactive UI updates
     private val _playbackState = MutableStateFlow<PlaybackState>(PlaybackState.Stopped)
     val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
 
+    // Data class for track information
+    data class TrackInfo(
+        val uri: String,
+        val name: String,
+        val artist: String
+    )
+
     // Binder for Activity to communicate with Service
     private val binder = MusicPlayerBinder()
+
+    // Coroutine scope for background tasks
+    private val serviceScope = CoroutineScope(Dispatchers.Main + Job())
+    private var notificationUpdateJob: Job? = null
 
     /**
      * Binder class that provides access to the service instance.
@@ -79,6 +104,16 @@ class MusicPlayerService : Service() {
 
         // Initialize ExoPlayer
         exoPlayer = ExoPlayer.Builder(this).build().apply {
+            // Set audio attributes for music playback
+            val audioAttributes = androidx.media3.common.AudioAttributes.Builder()
+                .setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_MUSIC)
+                .setUsage(androidx.media3.common.C.USAGE_MEDIA)
+                .build()
+            setAudioAttributes(audioAttributes, true) // true = handle audio focus automatically
+
+            // Ensure volume is set to maximum (1.0f)
+            volume = 1.0f
+
             // Add listener for playback state changes
             addListener(object : Player.Listener {
                 override fun onPlaybackStateChanged(playbackState: Int) {
@@ -92,10 +127,8 @@ class MusicPlayerService : Service() {
                             _playbackState.value = PlaybackState.Preparing(currentTrackName)
                         }
                         Player.STATE_ENDED -> {
-                            Log.d(TAG, "ExoPlayer STATE_ENDED")
-                            _playbackState.value = PlaybackState.Stopped
-                            stopForeground(STOP_FOREGROUND_REMOVE)
-                            stopSelf()
+                            Log.d(TAG, "ExoPlayer STATE_ENDED - Auto-playing next track")
+                            handleTrackEnded()
                         }
                         Player.STATE_IDLE -> {
                             Log.d(TAG, "ExoPlayer STATE_IDLE")
@@ -107,12 +140,50 @@ class MusicPlayerService : Service() {
                     Log.d(TAG, "ExoPlayer onIsPlayingChanged: $isPlaying")
                     updatePlaybackState()
                     updateNotification()
+
+                    // Start or stop periodic notification updates
+                    if (isPlaying) {
+                        startNotificationUpdates()
+                    } else {
+                        stopNotificationUpdates()
+                    }
+                }
+
+                override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                    Log.e(TAG, "ExoPlayer error: ${error.errorCodeName} - ${error.message}", error)
+                    _playbackState.value = PlaybackState.Stopped
                 }
             })
         }
 
         // Initialize notification manager
         notificationManager = MusicNotificationManager(this)
+    }
+
+    /**
+     * Start periodic notification updates to show progress.
+     */
+    private fun startNotificationUpdates() {
+        stopNotificationUpdates() // Cancel any existing job
+        notificationUpdateJob = serviceScope.launch {
+            while (true) {
+                delay(1000) // Update every second
+                exoPlayer?.let { player ->
+                    if (player.isPlaying) {
+                        updateNotification()
+                        updatePlaybackState()
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Stop periodic notification updates.
+     */
+    private fun stopNotificationUpdates() {
+        notificationUpdateJob?.cancel()
+        notificationUpdateJob = null
     }
 
     /**
@@ -139,6 +210,12 @@ class MusicPlayerService : Service() {
             }
             MusicNotificationManager.ACTION_STOP -> {
                 handleStop()
+            }
+            MusicNotificationManager.ACTION_PREVIOUS -> {
+                handlePrevious()
+            }
+            MusicNotificationManager.ACTION_NEXT -> {
+                handleNext()
             }
             else -> {
                 // Start/resume playback with new track
@@ -185,6 +262,12 @@ class MusicPlayerService : Service() {
     override fun onDestroy() {
         Log.d(TAG, "Service onDestroy()")
 
+        // Stop notification updates
+        stopNotificationUpdates()
+
+        // Cancel coroutine scope
+        serviceScope.cancel()
+
         // Release ExoPlayer resources
         exoPlayer?.release()
         exoPlayer = null
@@ -200,10 +283,13 @@ class MusicPlayerService : Service() {
      * This is required to keep the service running when the app is backgrounded.
      */
     private fun startForegroundService() {
+        val player = exoPlayer ?: return
         val notification = notificationManager.buildNotification(
             trackName = currentTrackName,
             artist = currentArtist,
-            isPlaying = exoPlayer?.isPlaying ?: false
+            isPlaying = player.isPlaying,
+            position = player.currentPosition,
+            duration = if (player.duration > 0) player.duration else 0L
         )
 
         // Start foreground service
@@ -217,15 +303,26 @@ class MusicPlayerService : Service() {
      */
     private fun prepareAndPlay(uriString: String) {
         try {
+            Log.d(TAG, "Preparing track: $uriString")
             val mediaItem = MediaItem.fromUri(Uri.parse(uriString))
             exoPlayer?.apply {
+                // Stop current playback
+                stop()
+                // Clear previous media items
+                clearMediaItems()
+                // Set new media item
                 setMediaItem(mediaItem)
+                // Prepare the player
                 prepare()
+                // Ensure volume is set
+                volume = 1.0f
+                // Start playback
+                playWhenReady = true
                 play()
             }
-            Log.d(TAG, "Preparing and playing: $uriString")
+            Log.d(TAG, "Track prepared and playing. Volume: ${exoPlayer?.volume}")
         } catch (e: Exception) {
-            Log.e(TAG, "Error preparing track", e)
+            Log.e(TAG, "Error preparing track: ${e.message}", e)
         }
     }
 
@@ -233,10 +330,13 @@ class MusicPlayerService : Service() {
      * Update the notification based on current playback state.
      */
     private fun updateNotification() {
+        val player = exoPlayer ?: return
         val notification = notificationManager.buildNotification(
             trackName = currentTrackName,
             artist = currentArtist,
-            isPlaying = exoPlayer?.isPlaying ?: false
+            isPlaying = player.isPlaying,
+            position = player.currentPosition,
+            duration = if (player.duration > 0) player.duration else 0L
         )
         notificationManager.updateNotification(notification)
     }
@@ -250,9 +350,9 @@ class MusicPlayerService : Service() {
             val duration = player.duration.takeIf { it > 0 } ?: 0L
 
             _playbackState.value = if (player.isPlaying) {
-                PlaybackState.Playing(currentTrackName, position, duration)
+                PlaybackState.Playing(currentTrackName, position, duration, currentTrackIndex)
             } else if (player.playbackState == Player.STATE_READY) {
-                PlaybackState.Paused(currentTrackName, position, duration)
+                PlaybackState.Paused(currentTrackName, position, duration, currentTrackIndex)
             } else {
                 PlaybackState.Stopped
             }
@@ -278,8 +378,100 @@ class MusicPlayerService : Service() {
     private fun handleStop() {
         exoPlayer?.stop()
         _playbackState.value = PlaybackState.Stopped
+        currentTrackLoopCount = 0 // Reset loop count when stopping
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
+    }
+
+    /**
+     * Handle track ended - Loop current track or play next based on loop mode
+     */
+    private fun handleTrackEnded() {
+        if (playlist.isEmpty()) {
+            Log.d(TAG, "Playlist empty, stopping playback")
+            handleStop()
+            return
+        }
+
+        // Check if current track should loop
+        if (loopMode > 0 && currentTrackLoopCount < loopMode) {
+            // Loop current track
+            currentTrackLoopCount++
+            Log.d(TAG, "Looping current track (${currentTrackLoopCount}/${loopMode})")
+            playTrackAtIndex(currentTrackIndex, resetLoopCount = false)
+        } else {
+            // Reset loop counter and play next track
+            currentTrackLoopCount = 0
+
+            if (currentTrackIndex >= playlist.size - 1) {
+                // Reached end of playlist, stop
+                Log.d(TAG, "Playlist ended, stopping playback")
+                _playbackState.value = PlaybackState.Stopped
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf()
+            } else {
+                // Play next track
+                currentTrackIndex++
+                Log.d(TAG, "Auto-playing next track: ${currentTrackIndex + 1}/${playlist.size}")
+                playTrackAtIndex(currentTrackIndex)
+            }
+        }
+    }
+
+    /**
+     * Handle previous track action.
+     */
+    private fun handlePrevious() {
+        if (playlist.isEmpty()) return
+
+        // Manual previous action doesn't affect loop count
+        currentTrackIndex = if (currentTrackIndex > 0) {
+            currentTrackIndex - 1
+        } else {
+            playlist.size - 1 // Loop to last track
+        }
+
+        playTrackAtIndex(currentTrackIndex, isManualAction = true)
+    }
+
+    /**
+     * Handle next track action.
+     */
+    private fun handleNext() {
+        if (playlist.isEmpty()) return
+
+        // Manual next action doesn't affect loop count
+        currentTrackIndex = if (currentTrackIndex < playlist.size - 1) {
+            currentTrackIndex + 1
+        } else {
+            0 // Loop to first track
+        }
+
+        playTrackAtIndex(currentTrackIndex, isManualAction = true)
+    }
+
+    /**
+     * Play track at specific index.
+     * @param index Track index in playlist
+     * @param isManualAction True if triggered by user action (resets loop count)
+     * @param resetLoopCount Whether to reset the current track loop counter
+     */
+    private fun playTrackAtIndex(index: Int, isManualAction: Boolean = false, resetLoopCount: Boolean = true) {
+        if (index < 0 || index >= playlist.size) return
+
+        val track = playlist[index]
+        currentTrackName = track.name
+        currentArtist = track.artist
+        currentTrackIndex = index
+
+        // Reset loop count on manual track selection or when moving to new track
+        if (isManualAction || resetLoopCount) {
+            currentTrackLoopCount = 0
+            Log.d(TAG, "Track loop count reset")
+        }
+
+        prepareAndPlay(track.uri)
+        updateNotification()
     }
 
     // Public methods for Activity to control playback via Binder
@@ -327,5 +519,61 @@ class MusicPlayerService : Service() {
     fun seekTo(positionMs: Long) {
         exoPlayer?.seekTo(positionMs)
     }
+
+    /**
+     * Set the playlist for the service.
+     */
+    fun setPlaylist(tracks: List<TrackInfo>, startIndex: Int = 0) {
+        playlist.clear()
+        playlist.addAll(tracks)
+        currentTrackIndex = startIndex.coerceIn(0, tracks.size - 1)
+        currentTrackLoopCount = 0 // Reset loop count when setting new playlist
+        Log.d(TAG, "Playlist set with ${tracks.size} tracks, starting at index $startIndex")
+    }
+
+    /**
+     * Play previous track in playlist.
+     */
+    fun previous() {
+        handlePrevious()
+    }
+
+    /**
+     * Play next track in playlist.
+     */
+    fun next() {
+        handleNext()
+    }
+
+    /**
+     * Get current track index.
+     */
+    fun getCurrentTrackIndex(): Int = currentTrackIndex
+
+    /**
+     * Cycle loop mode: OFF -> 1x -> 2x -> OFF
+     * @return New loop mode (0, 1, or 2)
+     */
+    fun cycleLoopMode(): Int {
+        loopMode = when (loopMode) {
+            0 -> 1
+            1 -> 2
+            else -> 0
+        }
+        currentTrackLoopCount = 0 // Reset counter when changing mode
+
+        val modeText = when (loopMode) {
+            1 -> "Loop 1x"
+            2 -> "Loop 2x"
+            else -> "Loop OFF"
+        }
+        Log.d(TAG, "Loop mode changed to: $modeText")
+        return loopMode
+    }
+
+    /**
+     * Get current loop mode.
+     */
+    fun getLoopMode(): Int = loopMode
 }
 
