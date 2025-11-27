@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">Background Music Player</string>
+    <string name="select_track">Select a Track:</string>
+    <string name="status">Status:</string>
+    <string name="track">Track:</string>
+    <string name="no_track_selected">No track selected</string>
+    <string name="stopped">Stopped</string>
+    <string name="playing">Playing</string>
+    <string name="paused">Paused</string>
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
+    <string name="stop">Stop</string>
+    <string name="demo_track_1">Demo Track 1</string>
+    <string name="demo_track_2">Demo Track 2</string>
+    <string name="demo_track_3">Demo Track 3</string>
+    <string name="permission_needed">Permission needed to access audio files</string>
+    <string name="permission_granted">Permission granted</string>
+    <string name="permission_denied">Permission denied. Cannot access audio files from storage.</string>
+    <string name="instructions">Select a track to start playback. Music will continue playing even when you close the app or press the home button. Use the notification to control playback from outside the app.</string>
+</resources>
+

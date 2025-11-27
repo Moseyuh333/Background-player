@@ -1,0 +1,176 @@
+You are an expert Android engineer.
+Your task: design and implement a simple Android music player app that continues playing music even after the user leaves or closes the app, using a Foreground Service. The app must support local FLAC audio files.
+
+1. Tech stack & project setup
+
+Language: Kotlin (if you think Java is better for clarity, explain why and use Java).
+
+Minimum SDK: reasonable modern version (e.g. 26+).
+
+Use AndroidX and ViewModel + LiveData or StateFlow where appropriate.
+
+Use Foreground Service and (optionally) Bound Service according to the standard Android Service lifecycle:
+
+onCreate(), onStartCommand(), onDestroy() for started / foreground service.
+
+onBind(), onUnbind() for bound service if needed.
+
+Implement notification channel and startForeground() so the service stays alive when app is terminated or Activity is destroyed.
+
+2. Audio playback requirements
+
+Use a modern audio engine that can play FLAC reliably, e.g. ExoPlayer.
+
+App behavior:
+
+Plays FLAC files from local storage (e.g. a fixed raw/ resource or from a folder like Music/).
+
+Support Play / Pause / Stop and simple seek.
+
+Explain briefly why ExoPlayer is chosen over MediaPlayer for FLAC.
+
+3. Service design (foreground + optional bound)
+
+Implement a class MusicPlayerService that:
+
+Extends Service (or LifecycleService if needed).
+
+In onCreate() initializes ExoPlayer.
+
+In onStartCommand():
+
+Receives which track to play (e.g. via Intent extras).
+
+Starts playback if not already playing.
+
+Builds a persistent notification showing:
+
+Song title.
+
+Play/Pause action buttons.
+
+Stop or Close action.
+
+Calls startForeground(notificationId, notification).
+
+In onDestroy():
+
+Releases ExoPlayer and clears resources.
+
+Make the service continue playing even when:
+
+The Activity is destroyed or user presses Back.
+
+The app is swiped away from Recent Apps (as long as Android policy allows, explain limitations).
+
+Implement proper START_STICKY / START_NOT_STICKY behavior and explain your choice.
+
+If you use a bound service:
+
+Provide a Binder class to let the Activity control playback (play/pause/seek).
+
+Show how onBind() returns the binder, and how Activity obtains a reference to the service.
+
+4. Activity / UI
+
+Create a single main screen MainActivity with:
+
+A simple list or buttons to pick at least 1–3 FLAC tracks (you can hardcode file names / URIs for demo).
+
+Play / Pause / Stop buttons bound to the service:
+
+Start service and play selected track.
+
+Pause/resume playback.
+
+Stop playback and stop the service.
+
+Display basic info: current song name, playback state (Playing / Paused / Stopped).
+
+5. Notification controls
+
+Implement a media style notification (or simple notification if media style is too complex) with:
+
+Play/Pause toggle.
+
+Stop / Close action.
+
+Handle notification action clicks inside MusicPlayerService via PendingIntents and Intent actions.
+
+Make sure the notification is always visible while music is playing (Foreground Service requirement).
+
+6. Permissions & file access
+
+Handle needed permissions:
+
+On older Android: READ_EXTERNAL_STORAGE.
+
+On newer Android: READ_MEDIA_AUDIO.
+
+Add runtime permission request flow in MainActivity.
+
+Show how to load a FLAC file from:
+
+res/raw (simplest demo), and/or
+
+A path on external storage.
+
+If using external storage, show sample code for picking a file URI (e.g. using Storage Access Framework) and passing it to the service.
+
+7. Manifest configuration
+
+In AndroidManifest.xml:
+
+Declare the service with <service ... android:foregroundServiceType="mediaPlayback">.
+
+Add necessary permissions and exported flags.
+
+Show the correct intent filter / attributes if needed.
+
+Explain why these flags are required.
+
+8. Lifecycle & edge cases
+
+Explain in comments or short documentation:
+
+What happens when:
+
+User rotates the screen.
+
+User leaves the app (HOME or BACK).
+
+User swipes the app from Recent apps.
+
+User swipes the notification away or presses Stop.
+
+How the service is stopped (stopForeground(true), stopSelf()).
+
+Ensure there are no memory leaks and ExoPlayer is always released.
+
+9. Output format
+
+Provide:
+
+A high-level architecture overview (1–2 paragraphs) describing how Activity + Service + ExoPlayer + Notification work together.
+
+Full code files:
+
+MainActivity.kt
+
+MusicPlayerService.kt
+
+Any helper classes (e.g. MusicNotificationManager, ServiceConnection).
+
+AndroidManifest.xml relevant parts.
+
+Gradle dependencies for ExoPlayer and AndroidX libraries.
+
+Clear step-by-step instructions:
+
+How to add the FLAC files.
+
+How to build and run the app.
+
+How to verify that music continues playing when the user exits the app.
+
+Make the code ready to compile in a new Android Studio project with minimal modification.
